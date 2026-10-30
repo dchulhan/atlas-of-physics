@@ -8,6 +8,7 @@
   const wide = () => !matchMedia('(max-width: 900px), (max-height: 520px), (prefers-reduced-motion: reduce)').matches;
   const path = url => new URL(url, location).pathname;
   const T = { duration: 900, easing: 'cubic-bezier(.65,0,.35,1)', fill: 'both' }, P = 'perspective(2600px)';
+  const whenReady = (transition, callback) => transition.ready.then(callback, () => {});
   const vt = (part, frames, t = T) => html.animate(frames, { ...t, pseudoElement: `::view-transition-${part}` });
   // the card c and the open book's right page r. Shut, the book is the card: its spine (q, open) on the card's left
   // edge (k), the pages scaled by s about it. Both pages and the contents page scale linearly in the eased time, so
@@ -25,7 +26,10 @@
       const opening = sessionStorage.opening === location.pathname; delete sessionStorage.opening;
       const t = e.viewTransition;
       if (!opening || !t || !wide()) return;
-      const book = $('book'), right = $('right'), r = right.getBoundingClientRect(), g = geo(JSON.parse(sessionStorage.card), r);
+      const book = $('book'), right = $('right');
+      // Browsers without render-blocking expect links may reveal before React mounts.
+      if (!book || !right || !$('left') || !sessionStorage.card) { void t.ready.catch(() => {}); t.skipTransition(); return; }
+      const r = right.getBoundingClientRect(), g = geo(JSON.parse(sessionStorage.card), r);
       const b = book.getBoundingClientRect(), bx = b.left + b.width / 2, by = b.top + b.height / 2;
       const dx = g.k[0] - bx - g.s * (g.q[0] - bx), dy = g.k[1] - by - g.s * (g.q[1] - by);
       html.classList.add('book-vt'); book.style.viewTransitionName = 'book';
@@ -35,7 +39,7 @@
                       { transform: 'translate(-50%, -50%) scale(1)', clipPath: 'inset(-50px)' }], T),
         $('left').animate([{ transform: 'rotateY(180deg)' }, { transform: 'rotateY(0deg)' }], T)];
       anims.forEach(a => a.pause());
-      t.ready.then(() => {
+      whenReady(t, () => {
         anims.push(vt('old(cover)', [{ transform: g.cover[0] }, { transform: g.cover[1] }]),
                    vt('old(root)', [{ transform: 'none' }, { transform: g.zoomed }]),
                    vt('new(root)', [{ opacity: 0 }, { opacity: 0, offset: .3 }, { opacity: 1, offset: .75 }, { opacity: 1 }], { ...T, easing: 'linear' }));   // the chapter around the book, as it lands
@@ -45,17 +49,17 @@
       t.finished.finally(() => { html.classList.remove('book-vt'); book.style.viewTransitionName = ''; });
       // shut on the card until the pages are drawn (at most a moment), so it opens onto them. Once: playing a
       // finished animation would run it again.
-      let go = () => { go = () => {}; t.ready.then(() => anims.forEach(a => a.play())); };
+      let go = () => { go = () => {}; whenReady(t, () => anims.forEach(a => a.play())); };
       addEventListener('bookready', () => go(), { once: true }); setTimeout(() => go(), 1500);
     });
     // leaving for the contents page: the pages go as pictures, for it to shut into the card
     addEventListener('pageswap', e => {
       const to = e.activation?.entry.url;
-      if (!e.viewTransition || !to || path(to) !== path('../') || !wide()) return;
+      if (!e.viewTransition || !to || path(to) !== path('../') || !wide() || !$('left') || !$('right')) return;
       $('left').style.viewTransitionName = 'left'; $('right').style.viewTransitionName = 'right';
       sessionStorage.closing = JSON.stringify({ p: location.pathname, r: $('right').getBoundingClientRect() });
     });
-    addEventListener('pageshow', () => $('left').style.viewTransitionName = $('right').style.viewTransitionName = '');
+    addEventListener('pageshow', () => { if ($('left') && $('right')) $('left').style.viewTransitionName = $('right').style.viewTransitionName = ''; });
     // come from the contents page, the brand link goes back to it: where it was scrolled to, and from the cache
     addEventListener('click', e => {
       const a = e.target.closest?.('a.brand');
@@ -84,7 +88,7 @@
     const g = geo(a.getBoundingClientRect(), shut.r);
     html.classList.add('book-vt'); a.style.viewTransitionName = 'cover';
     // the left page swings shut over the right, its back the card; both shrink into the card's place
-    t.ready.then(() => {
+    whenReady(t, () => {
       vt('old(left)', [{ transform: `${g.open} ${P} rotateY(0deg)` }, { transform: `${g.shut} ${P} rotateY(180deg)` }]);
       vt('old(right)', [{ transform: g.open, clipPath: 'inset(0px 0px 0px 0px)' }, { transform: g.shut, clipPath: `inset(0px ${shut.r.width - g.w}px 0px 0px)` }]);
       vt('new(cover)', [{ transform: g.cover[1] }, { transform: g.cover[0] }]);
@@ -94,3 +98,4 @@
     t.finished.finally(() => { html.classList.remove('book-vt'); a.style.viewTransitionName = ''; });
   });
 })();
+

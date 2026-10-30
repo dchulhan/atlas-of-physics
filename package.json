@@ -3,7 +3,16 @@
   "version": "1.0.0",
   "description": "An interactive 3D textbook for AP Physics 1 and AP Physics C",
   "scripts": {
-    "check": "for c in kinematics newton circular energy momentum oscillations rotation fluids electrostatics gauss potential capacitors circuits magnetism induction; do node $c/checks.mjs > /dev/null || { echo FAIL $c; exit 1; }; done; node equations/check.mjs"
+    "dev": "vite",
+    "typecheck": "tsc --noEmit",
+    "check": "node scripts/check-physics.mjs",
+    "test": "pnpm check",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test:smoke": "node tests/smoke/browser.js",
+    "verify": "pnpm typecheck && pnpm check && pnpm build && pnpm test:smoke",
+    "deploy": "pnpm verify && wrangler deploy",
+    "cf:preview": "pnpm build && wrangler dev"
   },
   "keywords": [],
   "author": "",
@@ -11,6 +20,26 @@
   "type": "module",
   "private": true,
   "devDependencies": {
-    "puppeteer-core": "^25.16.0"
+    "puppeteer-core": "^25.16.0",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "@tailwindcss/vite": "^4.1.0",
+    "tailwindcss": "^4.1.0",
+    "typescript": "^5.9.0",
+    "vite": "^8.0.0",
+    "wrangler": "^4.0.0",
+    "@playwright/test": "^1.58.0"
+  },
+  "packageManager": "pnpm@10.28.2",
+  "engines": {
+    "node": ">=22.12.0 <25",
+    "pnpm": ">=10 <11"
+  },
+  "dependencies": {
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "three": "0.186.1"
   }
 }

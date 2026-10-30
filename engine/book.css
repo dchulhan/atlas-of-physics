@@ -24,7 +24,7 @@
 }
 .page { position: relative; background: var(--card); overflow: hidden; }
 .page.left { border-radius: 14px 3px 3px 14px; box-shadow: var(--lift); padding: 54px 56px 64px; }
-/* opening, the left page swings out from under the cover, about the spine (engine/cover.js) */
+/* opening, the left page swings out from under the cover, about the spine (public/cover.js) */
 .page.left { backface-visibility: hidden; transform-origin: 100% 50%; }
 .page.right { border-radius: 3px 14px 14px 3px; box-shadow: var(--lift); }
 .spine {
@@ -307,3 +307,4 @@
 @media (max-width: 1240px) and (min-width: 901px) { .corner.bl { display: none; } }
 /* fingers: each swipe lands on a whole page */
 @media (pointer: coarse) { html { scroll-snap-type: y mandatory; } .scroll-space > div { scroll-snap-align: start; } }
+

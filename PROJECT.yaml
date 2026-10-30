@@ -1,0 +1,24 @@
+schema_version: 1
+name: atlas-of-physics
+status: active
+repo_profile:
+  type: application
+  lifecycle: active
+  criticality: low
+description: Interactive browser textbook for AP Physics 1 and AP Physics C.
+owners:
+  product: dchulhan
+runtime:
+  node: ">=22.12.0 <25"
+  package_manager: pnpm 10
+  hosting: Cloudflare Workers static assets
+commands:
+  setup: bash scripts/setup
+  run: pnpm dev
+  verify: bash scripts/verify
+  deploy: pnpm deploy
+capabilities: [web]
+canonical_docs:
+  product: docs/PRD.md
+  architecture: docs/ARCHITECTURE.md
+  current_state: STATUS.md
